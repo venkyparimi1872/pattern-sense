@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fabric Pattern Classifier</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  /* ── Tokens ── */
+  :root {
+    --ink:       #1a1410;
+    --ink-soft:  #5c4f45;
+    --paper:     #faf7f4;
+    --paper-2:   #f2ede8;
+    --thread:    #c85c2a;        /* burnt sienna — fabric / textile accent */
+    --thread-lt: #f0ddd4;
+    --loom:      #3d6b5e;        /* deep teal — secondary */
+    --loom-lt:   #d4ebe5;
+    --gold:      #b8862a;
+    --border:    #e0d8d0;
+    --radius:    12px;
+    --shadow:    0 4px 24px rgba(26,20,16,.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .logo-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--ink);
+    letter-spacing: -.01em;
+  }
+  .logo-tag {
+    font-size: .75rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  .header-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+    color: var(--loom);
+    background: var(--loom-lt);
+    border: 1px solid var(--loom);
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  /* ── Layout ── */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ── Hero (left col, full width on mobile) ── */
+  .hero {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    max-width: 560px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--thread);
+  }
+
+  .hero-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .stat-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: .75rem;
+    background: var(--paper-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .stat-pill strong { color: var(--ink); font-weight: 600; }
+
+  /* ── Card ── */
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .card-head {
+    padding: 18px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-head h2 {
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--thread);
+    flex-shrink: 0;
+  }
+  .dot.teal { background: var(--loom); }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    margin: 24px;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--thread);
+    background: var(--thread-lt);
+  }
+  .upload-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+    background: var(--paper-2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+  .upload-zone p { font-size: .88rem; color: var(--ink-soft); line-height: 1.5; }
+  .upload-zone p strong { color: var(--thread); font-weight: 600; }
+
+  /* ── Preview ── */
+  #preview-wrap {
+    display: none;
+    margin: 0 24px 24px;
+    position: relative;
+  }
+  #preview-wrap img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: block;
+  }
+  #clear-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: rgba(26,20,16,.7);
+    color: #fff;
+    border: none;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: .9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Model selector ── */
+  .model-select {
+    margin: 0 24px 20px;
+  }
+  .model-select label {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .model-tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .model-tab {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--paper);
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    transition: all .15s;
+    text-align: center;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .model-tab:hover { border-color: var(--thread); color: var(--thread); }
+  .model-tab.active {
+    border-color: var(--thread);
+    background: var(--thread);
+    color: #fff;
+  }
+  .model-tab .acc {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: .7rem;
+    margin-top: 2px;
+    opacity: .85;
+  }
+
+  /* ── Submit ── */
+  .submit-btn {
+    display: block;
+    width: calc(100% - 48px);
+    margin: 0 24px 24px;
+    padding: 14px;
+    background: var(--thread);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    letter-spacing: .01em;
+  }
+  .submit-btn:hover:not(:disabled) { background: #a84820; }
+  .submit-btn:active:not(:disabled) { transform: scale(.98); }
+  .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── Result panel ── */
+  #result-panel { padding: 24px; }
+
+  .result-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--ink-soft);
+  }
+  .result-empty .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .result-empty p { font-size: .88rem; line-height: 1.6; }
+
+  /* Prediction badge */
+  .pred-badge {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, var(--thread-lt), var(--paper-2));
+    border: 1px solid var(--thread);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+  .pred-icon { font-size: 2.2rem; }
+  .pred-label {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.7rem;
+    color: var(--thread);
+    text-transform: capitalize;
+    line-height: 1;
+  }
+  .pred-conf {
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+
+  /* Confidence bars */
+  .bars-title {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 48px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .bar-label {
+    font-size: .8rem;
+    font-weight: 500;
+    color: var(--ink);
+    text-transform: capitalize;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bar-track {
+    height: 8px;
+    background: var(--paper-2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--border);
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+  }
+  .bar-fill.top { background: var(--thread); }
+  .bar-fill.second { background: var(--gold); }
+  .bar-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: .72rem;
+    color: var(--ink-soft);
+    text-align: right;
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--thread-lt);
+    border-top-color: var(--thread);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 48px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error */
+  .error-box {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: .85rem;
+    color: #991b1b;
+  }
+
+  /* ── Footer / classes legend ── */
+  .classes-section {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+  .classes-section h3 {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+  .class-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    font-size: .8rem;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--paper-2);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    text-transform: capitalize;
+    letter-spacing: .01em;
+  }
+
+  @media (max-width: 700px) {
+    main { grid-template-columns: 1fr; padding: 24px 16px 60px; }
+    .hero { flex-direction: column; align-items: flex-start; }
+    .hero-meta { align-items: flex-start; }
+    header { padding: 0 16px; }
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-name">PATTERN SENSE</span>
+  </div>
+  <span class="header-badge" id="device-badge">loading…</span>
+</header>
+
+<main>
+  <!-- Hero -->
+  <div class="hero">
+    <h1>Classify the fabric pattern with <em>deep learning</em></h1>
+    <div class="hero-meta" id="hero-meta">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <!-- Left: Upload card -->
+  <div class="card">
+    <div class="card-head">
+      <div class="dot"></div>
+      <h2>Upload Image</h2>
+    </div>
+
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="file-input" accept="image/*"/>
+      <div class="upload-icon">🧵</div>
+      <p><strong>Click to browse</strong> or drag & drop<br/>JPG, PNG, WEBP supported</p>
+    </div>
+
+    <div id="preview-wrap">
+      <img id="preview-img" src="" alt="Preview"/>
+      <button id="clear-btn" title="Remove image">✕</button>
+    </div>
+
+    <div class="model-select">
+      <label>Select Model</label>
+      <div class="model-tabs" id="model-tabs">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <button class="submit-btn" id="classify-btn" disabled>
+      Classify Fabric Pattern
+    </button>
+  </div>
+
+  <!-- Right: Result card -->
+  <div class="card">
+    <div class="card-head">
+      <div class="dot teal"></div>
+      <h2>Prediction</h2>
+    </div>
+    <div id="result-panel">
+      <div class="result-empty">
+        <div class="empty-icon">🔍</div>
+        <p>Upload a fabric image and click<br/><strong>Classify</strong> to see the prediction.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classes legend -->
+  <div class="classes-section">
+    <h3>Supported Pattern Classes</h3>
+    <div class="class-chips" id="class-chips">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</main>
+
+<script>
+const CLASS_ICONS = {
+  animal:    '🐆', cartoon: '🎨', floral: '🌸', geometry: '📐',
+  ikat:      '🪢', plain:   '⬜', 'polka dot': '🔵', squares: '▪️',
+  stripes:   '〰️', tribal:  '🔺',
+};
+
+let selectedModel = null;
+let selectedFile  = null;
+let modelsData    = {};
+
+// ── Fetch model info ──
+async function init() {
+  const res  = await fetch('/models');
+  modelsData = await res.json();
+
+  // device badge
+  document.getElementById('device-badge').textContent =
+    Object.keys(modelsData).length + ' models loaded';
+
+  // hero stats
+  const meta = document.getElementById('hero-meta');
+  for (const [name, info] of Object.entries(modelsData)) {
+    const pill = document.createElement('div');
+    pill.className = 'stat-pill';
+    const pct = info.val_acc != null ? (info.val_acc * 100).toFixed(1) + '%' : 'N/A';
+    pill.innerHTML = `${name} &nbsp;·&nbsp; <strong>${pct}</strong> val acc`;
+    meta.appendChild(pill);
+  }
+
+  // model tabs
+  const tabs = document.getElementById('model-tabs');
+  Object.entries(modelsData).forEach(([name, info], i) => {
+    const btn = document.createElement('button');
+    btn.className = 'model-tab' + (i === 0 ? ' active' : '');
+    btn.dataset.model = name;
+    const pct = info.val_acc != null ? (info.val_acc * 100).toFixed(1) + '%' : '';
+    btn.innerHTML = `${name}<span class="acc">${pct} val acc</span>`;
+    btn.onclick = () => {
+      document.querySelectorAll('.model-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      selectedModel = name;
+    };
+    tabs.appendChild(btn);
+    if (i === 0) selectedModel = name;
+  });
+
+  // class chips — use first model's classes
+  const firstClasses = Object.values(modelsData)[0]?.classes || [];
+  const chips = document.getElementById('class-chips');
+  firstClasses.forEach(cls => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = (CLASS_ICONS[cls] || '🧶') + ' ' + cls;
+    chips.appendChild(chip);
+  });
+}
+
+// ── File handling ──
+const fileInput   = document.getElementById('file-input');
+const uploadZone  = document.getElementById('upload-zone');
+const previewWrap = document.getElementById('preview-wrap');
+const previewImg  = document.getElementById('preview-img');
+const classifyBtn = document.getElementById('classify-btn');
+
+function setFile(file) {
+  selectedFile = file;
+  const url = URL.createObjectURL(file);
+  previewImg.src = url;
+  previewWrap.style.display = 'block';
+  uploadZone.style.display  = 'none';
+  classifyBtn.disabled = false;
+  showEmpty();
+}
+
+fileInput.addEventListener('change', e => { if (e.target.files[0]) setFile(e.target.files[0]); });
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) setFile(f);
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  selectedFile = null;
+  fileInput.value = '';
+  previewWrap.style.display = 'none';
+  uploadZone.style.display  = 'block';
+  classifyBtn.disabled = true;
+  showEmpty();
+});
+
+// ── Result helpers ──
+function showEmpty() {
+  document.getElementById('result-panel').innerHTML = `
+    <div class="result-empty">
+      <div class="empty-icon">🔍</div>
+      <p>Upload a fabric image and click<br/><strong>Classify</strong> to see the prediction.</p>
+    </div>`;
+}
+
+function showSpinner() {
+  document.getElementById('result-panel').innerHTML = `<div class="spinner"></div>`;
+}
+
+function showResult(data) {
+  const top      = data.prediction;
+  const conf     = (data.confidence * 100).toFixed(1);
+  const icon     = CLASS_ICONS[top] || '🧶';
+  const scores   = data.all_scores.slice(0, 6);
+
+  const barsHtml = scores.map((s, i) => {
+    const pct      = (s.confidence * 100).toFixed(1);
+    const fillCls  = i === 0 ? 'top' : i === 1 ? 'second' : '';
+    return `
+      <div class="bar-row">
+        <span class="bar-label">${s.label}</span>
+        <div class="bar-track">
+          <div class="bar-fill ${fillCls}" style="width:${pct}%"></div>
+        </div>
+        <span class="bar-pct">${pct}%</span>
+      </div>`;
+  }).join('');
+
+  document.getElementById('result-panel').innerHTML = `
+    <div class="pred-badge">
+      <div class="pred-icon">${icon}</div>
+      <div>
+        <div class="pred-label">${top}</div>
+        <div class="pred-conf">${conf}% confidence · ${selectedModel}</div>
+      </div>
+    </div>
+    <div class="bars-title">All Class Scores</div>
+    ${barsHtml}`;
+}
+
+function showError(msg) {
+  document.getElementById('result-panel').innerHTML = `<div class="error-box">⚠️ ${msg}</div>`;
+}
+
+// ── Classify ──
+classifyBtn.addEventListener('click', async () => {
+  if (!selectedFile || !selectedModel) return;
+  showSpinner();
+  classifyBtn.disabled = true;
+
+  const form = new FormData();
+  form.append('file',  selectedFile);
+  form.append('model', selectedModel);
+
+  try {
+    const res  = await fetch('/predict', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Server error');
+    showResult(data);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    classifyBtn.disabled = false;
+  }
+});
+
+init();
+</script>
+</body>
+</html>
