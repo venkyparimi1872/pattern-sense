@@ -1,5 +1,4 @@
 # Pattern Sense — Fabric Pattern Classifier
-### FastAPI inference server for CNN + ResNet50 models
 
 ---
 
