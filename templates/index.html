@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Fabric Pattern Classifier</title>
+<title>Fabric Classification</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   /* ── Tokens ── */
   :root {
-    --ink:       #1a1410;
-    --ink-soft:  #5c4f45;
-    --paper:     #faf7f4;
-    --paper-2:   #f2ede8;
-    --thread:    #c85c2a;        /* burnt sienna — fabric / textile accent */
-    --thread-lt: #f0ddd4;
-    --loom:      #3d6b5e;        /* deep teal — secondary */
-    --loom-lt:   #d4ebe5;
-    --gold:      #b8862a;
-    --border:    #e0d8d0;
+    --ink:       #1f3a2c;
+    --ink-soft:  #4f6f5d;
+    --paper:     #f2fbf4;
+    --paper-2:   #e6f6ea;
+    --thread:    #79c892;        /* light green accent */
+    --thread-lt: #dff5e6;
+    --loom:      #5fb57a;        /* secondary green */
+    --loom-lt:   #d4efdd;
+    --gold:      #97d7aa;
+    --border:    #c7e6d1;
     --radius:    12px;
-    --shadow:    0 4px 24px rgba(26,20,16,.08);
+    --shadow:    0 4px 24px rgba(31,58,44,.10);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -53,8 +53,9 @@
   .logo-name {
     font-family: 'DM Serif Display', serif;
     font-size: 1.5rem;
-    color: var(--ink);
+    color: var(--loom);
     letter-spacing: -.01em;
+    font-weight: 700;
   }
   .logo-tag {
     font-size: .75rem;
@@ -67,9 +68,9 @@
   .header-badge {
     font-family: 'DM Mono', monospace;
     font-size: .72rem;
-    color: var(--loom);
+    color: #2d6a48;
     background: var(--loom-lt);
-    border: 1px solid var(--loom);
+    border: 1px solid #6dbb87;
     padding: 4px 12px;
     border-radius: 20px;
   }
@@ -129,7 +130,7 @@
 
   /* ── Card ── */
   .card {
-    background: #fff;
+    background: #f9fefa;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
@@ -213,7 +214,7 @@
   #clear-btn {
     position: absolute;
     top: 8px; right: 8px;
-    background: rgba(26,20,16,.7);
+    background: rgba(49,95,70,.75);
     color: #fff;
     border: none;
     width: 28px; height: 28px;
@@ -262,6 +263,36 @@
     background: var(--thread);
     color: #fff;
   }
+  .model-tab.model-cnn {
+    border-color: #8bcea0;
+    color: #346e4d;
+    background: #ecf9f0;
+  }
+  .model-tab.model-cnn:hover {
+    border-color: #74c28e;
+    color: #2f6145;
+    background: #e2f5e9;
+  }
+  .model-tab.model-cnn.active {
+    border-color: #66b883;
+    background: linear-gradient(135deg, #8bd1a3, #66b883);
+    color: #fff;
+  }
+  .model-tab.model-resnet50 {
+    border-color: #83cb9c;
+    color: #2f6a49;
+    background: #e7f7ec;
+  }
+  .model-tab.model-resnet50:hover {
+    border-color: #6dbb87;
+    color: #2a5a3f;
+    background: #def3e6;
+  }
+  .model-tab.model-resnet50.active {
+    border-color: #58ab73;
+    background: linear-gradient(135deg, #80c99a, #58ab73);
+    color: #fff;
+  }
   .model-tab .acc {
     display: block;
     font-family: 'DM Mono', monospace;
@@ -287,7 +318,7 @@
     transition: background .15s, transform .1s;
     letter-spacing: .01em;
   }
-  .submit-btn:hover:not(:disabled) { background: #a84820; }
+  .submit-btn:hover:not(:disabled) { background: #5fb57a; }
   .submit-btn:active:not(:disabled) { transform: scale(.98); }
   .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
 
@@ -387,12 +418,12 @@
 
   /* Error */
   .error-box {
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
+    background: #e8f8ee;
+    border: 1px solid #96d6ab;
     border-radius: 8px;
     padding: 14px 16px;
     font-size: .85rem;
-    color: #991b1b;
+    color: #2f6a49;
   }
 
   /* ── Footer / classes legend ── */
@@ -448,7 +479,7 @@
 <main>
   <!-- Hero -->
   <div class="hero">
-    <h1>Classify the fabric pattern with <em>deep learning</em></h1>
+    <h1>Multi-Class Fabric Pattern Classification</h1>
     <div class="hero-meta" id="hero-meta">
       <!-- filled by JS -->
     </div>
@@ -514,6 +545,17 @@ const CLASS_ICONS = {
   stripes:   '〰️', tribal:  '🔺',
 };
 
+const MODEL_UI = {
+  CNN: {
+    display: 'Custom CNN',
+    className: 'model-cnn',
+  },
+  ResNet50: {
+    display: 'resnet50',
+    className: 'model-resnet50',
+  },
+};
+
 let selectedModel = null;
 let selectedFile  = null;
 let modelsData    = {};
@@ -529,22 +571,22 @@ async function init() {
 
   // hero stats
   const meta = document.getElementById('hero-meta');
-  for (const [name, info] of Object.entries(modelsData)) {
+  for (const [name] of Object.entries(modelsData)) {
+    const ui = MODEL_UI[name] || { display: name, className: '' };
     const pill = document.createElement('div');
     pill.className = 'stat-pill';
-    const pct = info.val_acc != null ? (info.val_acc * 100).toFixed(1) + '%' : 'N/A';
-    pill.innerHTML = `${name} &nbsp;·&nbsp; <strong>${pct}</strong> val acc`;
+    pill.innerHTML = `${ui.display} &nbsp;·&nbsp; <strong>loaded</strong>`;
     meta.appendChild(pill);
   }
 
   // model tabs
   const tabs = document.getElementById('model-tabs');
-  Object.entries(modelsData).forEach(([name, info], i) => {
+  Object.entries(modelsData).forEach(([name], i) => {
+    const ui = MODEL_UI[name] || { display: name, className: '' };
     const btn = document.createElement('button');
-    btn.className = 'model-tab' + (i === 0 ? ' active' : '');
+    btn.className = `model-tab ${ui.className}` + (i === 0 ? ' active' : '');
     btn.dataset.model = name;
-    const pct = info.val_acc != null ? (info.val_acc * 100).toFixed(1) + '%' : '';
-    btn.innerHTML = `${name}<span class="acc">${pct} val acc</span>`;
+    btn.innerHTML = `${ui.display}<span class="acc">ready</span>`;
     btn.onclick = () => {
       document.querySelectorAll('.model-tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
@@ -620,6 +662,7 @@ function showResult(data) {
   const conf     = (data.confidence * 100).toFixed(1);
   const icon     = CLASS_ICONS[top] || '🧶';
   const scores   = data.all_scores.slice(0, 6);
+  const modelText = (MODEL_UI[selectedModel] || { display: selectedModel }).display;
 
   const barsHtml = scores.map((s, i) => {
     const pct      = (s.confidence * 100).toFixed(1);
@@ -639,7 +682,7 @@ function showResult(data) {
       <div class="pred-icon">${icon}</div>
       <div>
         <div class="pred-label">${top}</div>
-        <div class="pred-conf">${conf}% confidence · ${selectedModel}</div>
+        <div class="pred-conf">${conf}% confidence · ${modelText}</div>
       </div>
     </div>
     <div class="bars-title">All Class Scores</div>
