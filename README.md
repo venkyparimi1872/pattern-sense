@@ -134,12 +134,6 @@ Core libraries:
 - NumPy, Pandas, scikit-learn
 - Matplotlib, Pillow
 
-Deployment and interface:
-- FastAPI
-- Uvicorn
-- Jinja2 templating
-- HTML/CSS/JavaScript frontend
-
 ## 9. Results and Comparative Analysis
 
 Based on the latest training outputs:
@@ -243,14 +237,6 @@ http://localhost:8000
 
 Potential next steps:
 - add per-class precision, recall, and F1 reporting
-- introduce k-fold cross-validation
 - experiment with efficient modern backbones (EfficientNet, ConvNeXt)
 - add test-time augmentation
 - add model explainability (Grad-CAM)
-- containerize deployment using Docker
-
-## 15. Conclusion
-
-This project demonstrates a full machine-learning lifecycle from training to deployment.
-Both models are functional, but transfer learning with ResNet50 significantly outperforms the custom CNN,
-making it the preferred model for production-style inference in this system.
